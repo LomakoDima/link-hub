@@ -15,6 +15,7 @@ import {
   Eye,
   Copy,
   Rocket,
+  LayoutPanelTop,
 } from "lucide-react";
 import {
   THEMES,
