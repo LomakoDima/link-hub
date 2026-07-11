@@ -1,4 +1,4 @@
-export type LinkBlockType = "link" | "header" | "social" | "image";
+export type LinkBlockType = "link" | "banner" | "header" | "social" | "image";
 
 export type SocialKind =
   | "instagram"
@@ -10,13 +10,18 @@ export type SocialKind =
   | "github"
   | "website";
 
+export type BannerStyle = "dark" | "ember" | "crimson" | "midnight" | "sand";
+
 export interface LinkBlock {
   id: string;
   type: LinkBlockType;
   title?: string;
+  subtitle?: string;
   url?: string;
   socials?: { kind: SocialKind; url: string }[];
   image?: string;
+  bannerStyle?: BannerStyle;
+  tall?: boolean;
 }
 
 export type ThemeName = "dark" | "light" | "sunset" | "ocean" | "forest";
@@ -76,12 +81,43 @@ export const THEMES: Record<
   },
 };
 
-const STORAGE_KEY = "korner_profile_v1";
+export const BANNER_STYLES: Record<
+  BannerStyle,
+  { gradient: string; ring: string; label: string }
+> = {
+  dark: {
+    label: "Графит",
+    gradient: "bg-[radial-gradient(ellipse_at_top_right,rgba(234,88,12,0.15),transparent_60%),linear-gradient(135deg,#111114,#1c1c22)]",
+    ring: "ring-1 ring-white/10",
+  },
+  ember: {
+    label: "Уголь",
+    gradient: "bg-[radial-gradient(ellipse_at_right,rgba(255,120,50,0.35),transparent_65%),linear-gradient(135deg,#2a0f06,#4a1608)]",
+    ring: "ring-1 ring-orange-500/30",
+  },
+  crimson: {
+    label: "Кармин",
+    gradient: "bg-[radial-gradient(ellipse_at_left,rgba(220,38,38,0.35),transparent_60%),linear-gradient(135deg,#3a0808,#7a0f0f)]",
+    ring: "ring-1 ring-red-500/30",
+  },
+  midnight: {
+    label: "Полночь",
+    gradient: "bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.35),transparent_60%),linear-gradient(135deg,#0a1e3a,#1e3a6a)]",
+    ring: "ring-1 ring-blue-400/30",
+  },
+  sand: {
+    label: "Песок",
+    gradient: "bg-[linear-gradient(135deg,#f5efe4,#e6d9c2)]",
+    ring: "ring-1 ring-amber-900/20",
+  },
+};
+
+const STORAGE_KEY = "korner_profile_v2";
 
 export const defaultProfile: Profile = {
-  slug: "almaty_hub",
-  name: "almaty_hub",
-  bio: "🚀 Almaty Hub powered by @astana.hub\n✨ IT • Startups • Community",
+  slug: "yourname",
+  name: "yourname",
+  bio: "Пара слов о себе\nи вашем проекте ✨",
   avatar: "",
   theme: "dark",
   blocks: [
@@ -89,19 +125,11 @@ export const defaultProfile: Profile = {
       id: "s1",
       type: "social",
       socials: [
-        { kind: "instagram", url: "https://instagram.com" },
-        { kind: "telegram", url: "https://t.me" },
-        { kind: "tiktok", url: "https://tiktok.com" },
-        { kind: "youtube", url: "https://youtube.com" },
+        { kind: "instagram", url: "" },
+        { kind: "telegram", url: "" },
+        { kind: "youtube", url: "" },
       ],
     },
-    { id: "b1", type: "link", title: "Лендинг Almaty Hub", url: "https://example.com" },
-    { id: "b2", type: "link", title: "TUMO Astana", url: "https://tumo.kz" },
-    { id: "b3", type: "link", title: "Tomorrow School", url: "https://example.com" },
-    { id: "b4", type: "link", title: "Startup Garage", url: "https://example.com" },
-    { id: "b5", type: "link", title: "Astana Hub Education", url: "https://astanahub.com" },
-    { id: "b6", type: "link", title: "Digital Nomad", url: "https://example.com" },
-    { id: "b7", type: "link", title: "Tech Orda", url: "https://example.com" },
   ],
 };
 

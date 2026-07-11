@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { LinkBlock, SocialKind } from "@/lib/link-store";
+import { BANNER_STYLES, type BannerStyle, type LinkBlock, type SocialKind } from "@/lib/link-store";
 import { ArrowDown, ArrowUp, Trash2, Plus } from "lucide-react";
 
 const SOCIAL_KINDS: SocialKind[] = [
@@ -67,6 +67,72 @@ export function BlockEditor({
               placeholder="https://..."
             />
           </div>
+        </div>
+      )}
+
+      {block.type === "banner" && (
+        <div className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Заголовок</Label>
+              <Input
+                value={block.title ?? ""}
+                onChange={(e) => onChange({ ...block, title: e.target.value })}
+                placeholder="Название проекта"
+              />
+            </div>
+            <div>
+              <Label>Подпись</Label>
+              <Input
+                value={block.subtitle ?? ""}
+                onChange={(e) => onChange({ ...block, subtitle: e.target.value })}
+                placeholder="Короткое описание"
+              />
+            </div>
+            <div>
+              <Label>URL</Label>
+              <Input
+                value={block.url ?? ""}
+                onChange={(e) => onChange({ ...block, url: e.target.value })}
+                placeholder="https://..."
+              />
+            </div>
+            <div>
+              <Label>Картинка (URL)</Label>
+              <Input
+                value={block.image ?? ""}
+                onChange={(e) => onChange({ ...block, image: e.target.value })}
+                placeholder="https://..."
+              />
+            </div>
+          </div>
+          <div>
+            <Label className="mb-2 block">Стиль баннера</Label>
+            <div className="flex flex-wrap gap-2">
+              {(Object.keys(BANNER_STYLES) as BannerStyle[]).map((k) => {
+                const s = BANNER_STYLES[k];
+                const active = (block.bannerStyle ?? "dark") === k;
+                return (
+                  <button
+                    key={k}
+                    onClick={() => onChange({ ...block, bannerStyle: k })}
+                    className={`h-10 w-16 rounded-lg ${s.gradient} ${
+                      active ? "ring-2 ring-primary" : "ring-1 ring-border"
+                    }`}
+                    title={s.label}
+                  />
+                );
+              })}
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={block.tall ?? false}
+              onChange={(e) => onChange({ ...block, tall: e.target.checked })}
+            />
+            Высокий баннер
+          </label>
         </div>
       )}
 

@@ -15,6 +15,7 @@ import {
   Eye,
   Copy,
   Rocket,
+  LayoutPanelTop,
 } from "lucide-react";
 import {
   THEMES,
@@ -72,7 +73,17 @@ function BuilderPage() {
           ? { id: uid(), type, title: "Новый заголовок" }
           : type === "image"
             ? { id: uid(), type, image: "", url: "" }
-            : { id: uid(), type: "link", title: "Новая ссылка", url: "https://" };
+            : type === "banner"
+              ? {
+                  id: uid(),
+                  type: "banner",
+                  title: "Новый баннер",
+                  subtitle: "",
+                  url: "https://",
+                  image: "",
+                  bannerStyle: "ember",
+                }
+              : { id: uid(), type: "link", title: "Новая ссылка", url: "https://" };
     setProfile((p) => ({ ...p, blocks: [...p.blocks, nb] }));
   };
 
@@ -140,6 +151,9 @@ function BuilderPage() {
               <div className="flex flex-wrap gap-2">
                 <Button variant="secondary" size="sm" onClick={() => addBlock("link")}>
                   <LinkIcon className="mr-2 h-4 w-4" /> Ссылка
+                </Button>
+                <Button variant="default" size="sm" onClick={() => addBlock("banner")}>
+                  <LayoutPanelTop className="mr-2 h-4 w-4" /> Баннер
                 </Button>
                 <Button variant="secondary" size="sm" onClick={() => addBlock("header")}>
                   <Heading1 className="mr-2 h-4 w-4" /> Заголовок
