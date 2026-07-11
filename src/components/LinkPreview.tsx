@@ -113,21 +113,17 @@ export function LinkPreview({ profile, framed = false }: { profile: Profile; fra
                     style={{ backgroundImage: HONEYCOMB }}
                   />
                   {b.image && (
-                    <>
-                      <img
-                        src={b.image}
-                        alt=""
-                        className="pointer-events-none absolute inset-y-0 right-0 h-full w-1/2 object-cover opacity-90"
-                      />
-                      <div
-                        className="pointer-events-none absolute inset-0"
-                        style={{
-                          background:
-                            "linear-gradient(90deg, currentColor 30%, transparent 75%)",
-                          color: "inherit",
-                        }}
-                      />
-                    </>
+                    <img
+                      src={b.image}
+                      alt=""
+                      className="pointer-events-none absolute inset-y-0 right-0 h-full w-2/3 object-cover"
+                      style={{
+                        WebkitMaskImage:
+                          "linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 95%)",
+                        maskImage:
+                          "linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 95%)",
+                      }}
+                    />
                   )}
                   <div
                     className={`relative flex ${b.tall ? "min-h-[150px]" : "min-h-[92px]"} items-center px-5 py-4`}
