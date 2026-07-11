@@ -73,7 +73,17 @@ function BuilderPage() {
           ? { id: uid(), type, title: "Новый заголовок" }
           : type === "image"
             ? { id: uid(), type, image: "", url: "" }
-            : { id: uid(), type: "link", title: "Новая ссылка", url: "https://" };
+            : type === "banner"
+              ? {
+                  id: uid(),
+                  type: "banner",
+                  title: "Новый баннер",
+                  subtitle: "",
+                  url: "https://",
+                  image: "",
+                  bannerStyle: "ember",
+                }
+              : { id: uid(), type: "link", title: "Новая ссылка", url: "https://" };
     setProfile((p) => ({ ...p, blocks: [...p.blocks, nb] }));
   };
 
