@@ -23,13 +23,6 @@ export interface LinkBlock {
   bannerStyle?: BannerStyle;
   tall?: boolean;
 }
-  id: string;
-  type: LinkBlockType;
-  title?: string;
-  url?: string;
-  socials?: { kind: SocialKind; url: string }[];
-  image?: string;
-}
 
 export type ThemeName = "dark" | "light" | "sunset" | "ocean" | "forest";
 
@@ -91,9 +84,9 @@ export const THEMES: Record<
 const STORAGE_KEY = "korner_profile_v1";
 
 export const defaultProfile: Profile = {
-  slug: "almaty_hub",
-  name: "almaty_hub",
-  bio: "🚀 Almaty Hub powered by @astana.hub\n✨ IT • Startups • Community",
+  slug: "yourname",
+  name: "yourname",
+  bio: "Пара слов о себе\nи вашем проекте ✨",
   avatar: "",
   theme: "dark",
   blocks: [
@@ -101,13 +94,13 @@ export const defaultProfile: Profile = {
       id: "s1",
       type: "social",
       socials: [
-        { kind: "instagram", url: "https://instagram.com" },
-        { kind: "telegram", url: "https://t.me" },
-        { kind: "tiktok", url: "https://tiktok.com" },
-        { kind: "youtube", url: "https://youtube.com" },
+        { kind: "instagram", url: "" },
+        { kind: "telegram", url: "" },
+        { kind: "youtube", url: "" },
       ],
     },
-    { id: "b1", type: "link", title: "Лендинг Almaty Hub", url: "https://example.com" },
+  ],
+};
     { id: "b2", type: "link", title: "TUMO Astana", url: "https://tumo.kz" },
     { id: "b3", type: "link", title: "Tomorrow School", url: "https://example.com" },
     { id: "b4", type: "link", title: "Startup Garage", url: "https://example.com" },
