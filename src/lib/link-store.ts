@@ -1,4 +1,4 @@
-export type LinkBlockType = "link" | "header" | "social" | "image";
+export type LinkBlockType = "link" | "banner" | "header" | "social" | "image";
 
 export type SocialKind =
   | "instagram"
@@ -10,7 +10,19 @@ export type SocialKind =
   | "github"
   | "website";
 
+export type BannerStyle = "dark" | "ember" | "crimson" | "midnight" | "sand";
+
 export interface LinkBlock {
+  id: string;
+  type: LinkBlockType;
+  title?: string;
+  subtitle?: string;
+  url?: string;
+  socials?: { kind: SocialKind; url: string }[];
+  image?: string;
+  bannerStyle?: BannerStyle;
+  tall?: boolean;
+}
   id: string;
   type: LinkBlockType;
   title?: string;
