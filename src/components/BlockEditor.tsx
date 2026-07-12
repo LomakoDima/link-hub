@@ -1,8 +1,21 @@
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BANNER_STYLES, type BannerStyle, type LinkBlock, type SocialKind } from "@/lib/link-store";
-import { ArrowDown, ArrowUp, Trash2, Plus } from "lucide-react";
+import {
+  BANNER_PATTERNS,
+  BANNER_STYLES,
+  bannerPatternUrl,
+  type BannerPattern,
+  type BannerStyle,
+  type LinkBlock,
+  type SocialKind,
+} from "@/lib/link-store";
+import { fileToResizedDataUrl } from "@/lib/image";
+import { ArrowDown, ArrowUp, Trash2, Plus, Upload } from "lucide-react";
+
+const BANNER_RESOLUTIONS = [640, 960, 1280, 1600] as const;
 
 const SOCIAL_KINDS: SocialKind[] = [
   "instagram",
@@ -10,6 +23,17 @@ const SOCIAL_KINDS: SocialKind[] = [
   "tiktok",
   "youtube",
   "twitter",
+  "x",
+  "threads",
+  "facebook",
+  "whatsapp",
+  "discord",
+  "twitch",
+  "pinterest",
+  "spotify",
+  "dribbble",
+  "figma",
+  "slack",
   "linkedin",
   "github",
   "website",
@@ -30,6 +54,21 @@ export function BlockEditor({
   canUp: boolean;
   canDown: boolean;
 }) {
+  const bannerImageInputRef = useRef<HTMLInputElement>(null);
+  const [bannerResolution, setBannerResolution] = useState<number>(960);
+
+  const handleBannerImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const dataUrl = await fileToResizedDataUrl(file, bannerResolution, 0.82);
+      onChange({ ...block, image: dataUrl });
+    } catch {
+      toast.error("Couldn't read that image");
+    }
+  };
+
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <div className="mb-3 flex items-center justify-between">
@@ -52,11 +91,11 @@ export function BlockEditor({
       {block.type === "link" && (
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <Label>Заголовок</Label>
+            <Label>Title</Label>
             <Input
               value={block.title ?? ""}
               onChange={(e) => onChange({ ...block, title: e.target.value })}
-              placeholder="Мой сайт"
+              placeholder="My website"
             />
           </div>
           <div>
@@ -74,19 +113,19 @@ export function BlockEditor({
         <div className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <Label>Заголовок</Label>
+              <Label>Title</Label>
               <Input
                 value={block.title ?? ""}
                 onChange={(e) => onChange({ ...block, title: e.target.value })}
-                placeholder="Название проекта"
+                placeholder="Project name"
               />
             </div>
             <div>
-              <Label>Подпись</Label>
+              <Label>Subtitle</Label>
               <Input
                 value={block.subtitle ?? ""}
                 onChange={(e) => onChange({ ...block, subtitle: e.target.value })}
-                placeholder="Короткое описание"
+                placeholder="Short description"
               />
             </div>
             <div>
@@ -97,17 +136,48 @@ export function BlockEditor({
                 placeholder="https://..."
               />
             </div>
-            <div>
-              <Label>Картинка (URL)</Label>
-              <Input
-                value={block.image ?? ""}
-                onChange={(e) => onChange({ ...block, image: e.target.value })}
-                placeholder="https://..."
-              />
+            <div className="sm:col-span-2">
+              <Label>Image</Label>
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  className="min-w-[160px] flex-1"
+                  value={block.image ?? ""}
+                  onChange={(e) => onChange({ ...block, image: e.target.value })}
+                  placeholder="https://..."
+                />
+                <select
+                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                  value={bannerResolution}
+                  onChange={(e) => setBannerResolution(Number(e.target.value))}
+                  title="Upload resolution"
+                >
+                  {BANNER_RESOLUTIONS.map((r) => (
+                    <option key={r} value={r}>
+                      {r}px
+                    </option>
+                  ))}
+                </select>
+                <input
+                  ref={bannerImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleBannerImageFile}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => bannerImageInputRef.current?.click()}
+                >
+                  <Upload className="mr-2 h-4 w-4" /> Upload
+                </Button>
+              </div>
             </div>
           </div>
           <div>
-            <Label className="mb-2 block">Стиль баннера</Label>
+            <Label className="mb-2 block">Banner color</Label>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(BANNER_STYLES) as BannerStyle[]).map((k) => {
                 const s = BANNER_STYLES[k];
@@ -125,32 +195,75 @@ export function BlockEditor({
               })}
             </div>
           </div>
+          <div>
+            <Label className="mb-2 block">Banner pattern</Label>
+            <div className="flex flex-wrap gap-2">
+              {(Object.keys(BANNER_PATTERNS) as BannerPattern[]).map((k) => {
+                const p = BANNER_PATTERNS[k];
+                const active = (block.bannerPattern ?? "honeycomb") === k;
+                return (
+                  <button
+                    key={k}
+                    onClick={() => onChange({ ...block, bannerPattern: k })}
+                    className={`h-10 w-16 rounded-lg bg-neutral-800 ${
+                      active ? "ring-2 ring-primary" : "ring-1 ring-border"
+                    }`}
+                    style={{ backgroundImage: bannerPatternUrl(k, false) }}
+                    title={p.label}
+                  />
+                );
+              })}
+            </div>
+          </div>
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={block.tall ?? false}
               onChange={(e) => onChange({ ...block, tall: e.target.checked })}
             />
-            Высокий баннер
+            Tall banner
           </label>
         </div>
       )}
 
       {block.type === "header" && (
         <div>
-          <Label>Текст заголовка</Label>
+          <Label>Heading text</Label>
           <Input
             value={block.title ?? ""}
             onChange={(e) => onChange({ ...block, title: e.target.value })}
-            placeholder="Мои проекты"
+            placeholder="My projects"
           />
+        </div>
+      )}
+
+      {block.type === "contact" && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label>Email</Label>
+            <Input
+              type="email"
+              value={block.email ?? ""}
+              onChange={(e) => onChange({ ...block, email: e.target.value })}
+              placeholder="you@example.com"
+            />
+          </div>
+          <div>
+            <Label>Phone</Label>
+            <Input
+              type="tel"
+              value={block.phone ?? ""}
+              onChange={(e) => onChange({ ...block, phone: e.target.value })}
+              placeholder="+1 234 567 8900"
+            />
+          </div>
         </div>
       )}
 
       {block.type === "image" && (
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <Label>URL картинки</Label>
+            <Label>Image URL</Label>
             <Input
               value={block.image ?? ""}
               onChange={(e) => onChange({ ...block, image: e.target.value })}
@@ -158,7 +271,7 @@ export function BlockEditor({
             />
           </div>
           <div>
-            <Label>Ссылка (по клику)</Label>
+            <Label>Link (on click)</Label>
             <Input
               value={block.url ?? ""}
               onChange={(e) => onChange({ ...block, url: e.target.value })}
@@ -219,7 +332,7 @@ export function BlockEditor({
               })
             }
           >
-            <Plus className="mr-1 h-4 w-4" /> Соцсеть
+            <Plus className="mr-1 h-4 w-4" /> Social
           </Button>
         </div>
       )}

@@ -7,10 +7,9 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -38,9 +37,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -78,16 +74,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Korner — конструктор мультиссылок" },
+      { title: "Linqo — the multi-link builder" },
       {
         name: "description",
         content:
-          "Одна ссылка для всех ваших соцсетей и проектов. Живой предпросмотр, красивые темы, мгновенная публикация.",
+          "One link for all your socials and projects. Live preview, beautiful themes, instant publishing.",
       },
-      { property: "og:title", content: "Korner — конструктор мультиссылок" },
+      { property: "og:title", content: "Linqo — the multi-link builder" },
       {
         property: "og:description",
-        content: "Одна ссылка для всех ваших соцсетей и проектов.",
+        content: "One link for all your socials and projects.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

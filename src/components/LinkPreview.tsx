@@ -1,9 +1,27 @@
-import { BANNER_STYLES, THEMES, type Profile, type SocialKind } from "@/lib/link-store";
+import {
+  BANNER_STYLES,
+  THEMES,
+  bannerPatternUrl,
+  mailtoHref,
+  telHref,
+  type Profile,
+  type SocialKind,
+} from "@/lib/link-store";
 import {
   Instagram,
   Send,
   Youtube,
   Twitter,
+  X,
+  AtSign,
+  Facebook,
+  MessageCircle,
+  Twitch,
+  Pin,
+  Disc,
+  Dribbble,
+  Figma,
+  Slack,
   Linkedin,
   Github,
   Globe,
@@ -16,40 +34,64 @@ const socialIcon: Record<SocialKind, React.ComponentType<{ className?: string }>
   tiktok: Music2,
   youtube: Youtube,
   twitter: Twitter,
+  x: X,
+  threads: AtSign,
+  facebook: Facebook,
+  whatsapp: MessageCircle,
+  discord: MessageCircle,
+  twitch: Twitch,
+  pinterest: Pin,
+  spotify: Disc,
+  dribbble: Dribbble,
+  figma: Figma,
+  slack: Slack,
   linkedin: Linkedin,
   github: Github,
   website: Globe,
 };
 
-// Subtle honeycomb SVG pattern used as decorative background on banners.
-const HONEYCOMB =
-  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='84' height='96' viewBox='0 0 84 96'><g fill='none' stroke='%23ff7a2a' stroke-opacity='0.18' stroke-width='1'><path d='M42 2 l40 23 v46 l-40 23 l-40 -23 v-46 z'/><path d='M42 26 l20 11 v22 l-20 11 l-20 -11 v-22 z'/></g></svg>\")";
 
 export function LinkPreview({ profile, framed = false }: { profile: Profile; framed?: boolean }) {
-  const theme = THEMES[profile.theme];
+  const theme = THEMES[profile.theme] ?? THEMES.dark;
+  const name = profile.name || "";
+  const blocks = profile.blocks ?? [];
   const content = (
-    <div className={`min-h-full w-full ${theme.bg} px-5 py-8`}>
-      <div className="mx-auto flex max-w-md flex-col items-center gap-5">
-        <div className="flex flex-col items-center gap-3 text-center">
-          {profile.avatar ? (
-            <img
-              src={profile.avatar}
-              alt={profile.name}
-              className="h-20 w-20 rounded-full object-cover ring-2 ring-white/20"
-            />
-          ) : (
-            <div className="grid h-20 w-20 place-items-center rounded-full bg-white/10 text-2xl font-bold ring-2 ring-white/20">
-              {profile.name.charAt(0).toUpperCase() || "K"}
+    <div className={`min-h-full w-full ${theme.bg}`}>
+      <div className="h-28 w-full overflow-hidden">
+        {profile.cover ? (
+          <img src={profile.cover} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className={`h-full w-full ${theme.card}`} />
+        )}
+      </div>
+
+      <div className="px-5 pb-8">
+        <div className="mx-auto flex max-w-md flex-col gap-5">
+          <div className="flex items-start gap-3">
+            {profile.avatar ? (
+              <img
+                src={profile.avatar}
+                alt={name}
+                className="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-white/20"
+              />
+            ) : (
+              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-white/10 text-xl font-bold ring-2 ring-white/20">
+                {name.charAt(0).toUpperCase() || "K"}
+              </div>
+            )}
+            <div className="pt-3">
+              <div className="flex flex-wrap items-baseline gap-x-2">
+                <h1 className={`text-base font-semibold leading-tight ${theme.text}`}>
+                  {name || profile.slug}
+                </h1>
+                <span className={`text-xs ${theme.muted}`}>@{profile.slug}</span>
+              </div>
+              <p className={`mt-1 whitespace-pre-line text-sm ${theme.muted}`}>{profile.bio}</p>
             </div>
-          )}
-          <div>
-            <h1 className={`text-lg font-semibold ${theme.text}`}>@{profile.slug}</h1>
-            <p className={`mt-2 whitespace-pre-line text-sm ${theme.muted}`}>{profile.bio}</p>
           </div>
-        </div>
 
         <div className="flex w-full flex-col gap-3">
-          {profile.blocks.map((b) => {
+          {blocks.map((b) => {
             if (b.type === "header") {
               return (
                 <h2
@@ -65,7 +107,7 @@ export function LinkPreview({ profile, framed = false }: { profile: Profile; fra
               return (
                 <div key={b.id} className="flex flex-wrap justify-center gap-3 py-1">
                   {(b.socials ?? []).map((s, i) => {
-                    const Icon = socialIcon[s.kind];
+                    const Icon = socialIcon[s.kind] ?? Globe;
                     return (
                       <a
                         key={i}
@@ -79,6 +121,30 @@ export function LinkPreview({ profile, framed = false }: { profile: Profile; fra
                       </a>
                     );
                   })}
+                </div>
+              );
+            }
+
+            if (b.type === "contact") {
+              if (!b.email && !b.phone) return null;
+              return (
+                <div key={b.id} className="flex flex-col gap-3">
+                  {b.email && (
+                    <a
+                      href={mailtoHref(b.email)}
+                      className={`block rounded-2xl px-5 py-4 text-center text-sm font-medium transition ${theme.card} ${theme.text}`}
+                    >
+                      {b.email}
+                    </a>
+                  )}
+                  {b.phone && (
+                    <a
+                      href={telHref(b.phone)}
+                      className={`block rounded-2xl px-5 py-4 text-center text-sm font-medium transition ${theme.card} ${theme.text}`}
+                    >
+                      {b.phone}
+                    </a>
+                  )}
                 </div>
               );
             }
@@ -98,7 +164,7 @@ export function LinkPreview({ profile, framed = false }: { profile: Profile; fra
             }
 
             if (b.type === "banner") {
-              const style = BANNER_STYLES[b.bannerStyle ?? "dark"];
+              const style = BANNER_STYLES[b.bannerStyle ?? "dark"] ?? BANNER_STYLES.dark;
               const isLight = b.bannerStyle === "sand";
               return (
                 <a
@@ -109,8 +175,10 @@ export function LinkPreview({ profile, framed = false }: { profile: Profile; fra
                   className={`group relative block overflow-hidden rounded-2xl ${style.gradient} ${style.ring} transition-transform hover:-translate-y-0.5 hover:shadow-2xl`}
                 >
                   <div
-                    className="pointer-events-none absolute inset-0 opacity-70 mix-blend-screen"
-                    style={{ backgroundImage: HONEYCOMB }}
+                    className={`pointer-events-none absolute inset-0 opacity-70 ${
+                      isLight ? "mix-blend-multiply" : "mix-blend-screen"
+                    }`}
+                    style={{ backgroundImage: bannerPatternUrl(b.bannerPattern ?? "honeycomb", isLight) }}
                   />
                   {b.image && (
                     <img
@@ -134,7 +202,7 @@ export function LinkPreview({ profile, framed = false }: { profile: Profile; fra
                           isLight ? "text-neutral-900" : "text-white"
                         }`}
                       >
-                        {b.title || "Заголовок"}
+                        {b.title || "Heading"}
                       </div>
                       {b.subtitle && (
                         <div
@@ -164,14 +232,15 @@ export function LinkPreview({ profile, framed = false }: { profile: Profile; fra
             );
           })}
 
-          {profile.blocks.length === 0 && (
+          {blocks.length === 0 && (
             <div className={`rounded-2xl border border-dashed border-white/15 py-10 text-center text-sm ${theme.muted}`}>
-              Добавьте первый блок
+              Add your first block
             </div>
           )}
         </div>
 
-        <div className={`mt-6 text-[11px] ${theme.muted}`}>Made with korner.</div>
+          <div className={`mt-6 text-center text-[11px] ${theme.muted}`}>Made with Linqo.</div>
+        </div>
       </div>
     </div>
   );

@@ -17,14 +17,14 @@ function PublicPage() {
       const decoded = decodeProfile(hash);
       if (decoded) {
         setProfile(decoded);
-        document.title = `@${decoded.slug} — korner`;
+        document.title = `@${decoded.slug} — Linqo`;
         return;
       }
     }
     const local = loadProfile();
     if (local.slug === slug) {
       setProfile(local);
-      document.title = `@${local.slug} — korner`;
+      document.title = `@${local.slug} — Linqo`;
     } else {
       setProfile({ ...defaultProfile, slug });
     }
