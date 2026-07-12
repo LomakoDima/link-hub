@@ -1,35 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight, Check, Layers, Palette, Share2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Plus,
-  Link as LinkIcon,
-  Heading1,
-  Share2,
-  Image as ImageIcon,
-  Eye,
-  Copy,
-  Rocket,
-  LayoutPanelTop,
-} from "lucide-react";
-import {
-  THEMES,
-  defaultProfile,
-  loadProfile,
-  saveProfile,
-  uid,
-  encodeProfile,
-  type LinkBlock,
-  type Profile,
-  type ThemeName,
-} from "@/lib/link-store";
 import { LinkPreview } from "@/components/LinkPreview";
-import { BlockEditor } from "@/components/BlockEditor";
+import type { Profile } from "@/lib/link-store";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -38,244 +11,174 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Собери свою страницу со всеми ссылками за минуту. Красивые темы, соцсети, живой предпросмотр.",
+          "Одна ссылка для всех ваших соцсетей и проектов. Красивые темы, живой предпросмотр, мгновенная публикация.",
       },
       { property: "og:title", content: "Korner — конструктор мультиссылок" },
       {
         property: "og:description",
-        content: "Собери свою страницу со всеми ссылками за минуту.",
+        content: "Одна ссылка для всех ваших соцсетей и проектов.",
       },
     ],
   }),
-  component: BuilderPage,
+  component: LandingPage,
 });
 
-function BuilderPage() {
-  const [profile, setProfile] = useState<Profile>(defaultProfile);
-  const [ready, setReady] = useState(false);
+const demoProfile: Profile = {
+  slug: "demo",
+  name: "Анна Корнер",
+  bio: "Фотограф, путешественник, автор курса по визуальному контенту",
+  avatar:
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face",
+  theme: "dark",
+  blocks: [
+    {
+      id: "1",
+      type: "banner",
+      title: "Мой новый курс",
+      subtitle: "Старт 1 сентября",
+      url: "https://example.com",
+      image:
+        "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&h=400&fit=crop",
+      bannerStyle: "ember",
+      tall: true,
+    },
+    {
+      id: "2",
+      type: "link",
+      title: "Записаться на консультацию",
+      url: "https://example.com",
+    },
+    {
+      id: "3",
+      type: "link",
+      title: "Портфолио",
+      url: "https://example.com",
+    },
+    {
+      id: "4",
+      type: "social",
+      socials: [
+        { kind: "instagram", url: "https://instagram.com" },
+        { kind: "telegram", url: "https://telegram.org" },
+      ],
+    },
+  ],
+};
 
-  useEffect(() => {
-    setProfile(loadProfile());
-    setReady(true);
-  }, []);
+const features = [
+  {
+    icon: Layers,
+    title: "Блоки под всё",
+    description: "Ссылки, баннеры, заголовки, соцсети и картинки — расставляйте в любом порядке.",
+  },
+  {
+    icon: Palette,
+    title: "Красивые темы",
+    description: "Тёмная, светлая, закат, океан и лес. Каждая тема адаптируется под ваш контент.",
+  },
+  {
+    icon: Share2,
+    title: "Мгновенная публикация",
+    description: "Данные хранятся прямо в ссылке — делитесь без регистрации и бэкенда.",
+  },
+];
 
-  useEffect(() => {
-    if (ready) saveProfile(profile);
-  }, [profile, ready]);
-
-  const update = (patch: Partial<Profile>) => setProfile((p) => ({ ...p, ...patch }));
-
-  const addBlock = (type: LinkBlock["type"]) => {
-    const nb: LinkBlock =
-      type === "social"
-        ? { id: uid(), type, socials: [{ kind: "instagram", url: "" }] }
-        : type === "header"
-          ? { id: uid(), type, title: "Новый заголовок" }
-          : type === "image"
-            ? { id: uid(), type, image: "", url: "" }
-            : type === "banner"
-              ? {
-                  id: uid(),
-                  type: "banner",
-                  title: "Новый баннер",
-                  subtitle: "",
-                  url: "https://",
-                  image: "",
-                  bannerStyle: "ember",
-                }
-              : { id: uid(), type: "link", title: "Новая ссылка", url: "https://" };
-    setProfile((p) => ({ ...p, blocks: [...p.blocks, nb] }));
-  };
-
-  const updateBlock = (b: LinkBlock) =>
-    setProfile((p) => ({ ...p, blocks: p.blocks.map((x) => (x.id === b.id ? b : x)) }));
-  const removeBlock = (id: string) =>
-    setProfile((p) => ({ ...p, blocks: p.blocks.filter((x) => x.id !== id) }));
-  const moveBlock = (id: string, dir: -1 | 1) =>
-    setProfile((p) => {
-      const i = p.blocks.findIndex((x) => x.id === id);
-      const j = i + dir;
-      if (i < 0 || j < 0 || j >= p.blocks.length) return p;
-      const next = [...p.blocks];
-      [next[i], next[j]] = [next[j], next[i]];
-      return { ...p, blocks: next };
-    });
-
-  const shareUrl = useMemo(() => {
-    if (typeof window === "undefined") return "";
-    return `${window.location.origin}/p/${profile.slug}#${encodeProfile(profile)}`;
-  }, [profile]);
-
-  const copyShare = async () => {
-    await navigator.clipboard.writeText(shareUrl);
-    toast.success("Ссылка скопирована");
-  };
-
+function LandingPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <Rocket className="h-4 w-4" />
-            </div>
-            <span className="text-lg font-semibold tracking-tight">korner.</span>
-            <span className="ml-2 hidden text-sm text-muted-foreground sm:inline">
-              конструктор мультиссылок
-            </span>
+    <div className="min-h-screen bg-background font-sans text-foreground">
+      <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+        <Link to="/" className="flex items-center gap-2">
+          <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
+            <Sparkles className="h-4 w-4" />
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={copyShare}>
-              <Copy className="mr-2 h-4 w-4" /> Копировать
-            </Button>
-            <a href={shareUrl} target="_blank" rel="noreferrer">
-              <Button size="sm">
-                <Eye className="mr-2 h-4 w-4" /> Открыть
-              </Button>
-            </a>
-          </div>
+          <span className="font-heading text-xl font-semibold tracking-tight">korner.</span>
+        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/build"
+            className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
+          >
+            Редактор
+          </Link>
+          <Button asChild size="sm">
+            <Link to="/build">
+              Начать <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl gap-8 px-6 py-8 lg:grid-cols-[1fr_380px]">
-        <div>
-          <Tabs defaultValue="content" className="w-full">
-            <TabsList>
-              <TabsTrigger value="content">Контент</TabsTrigger>
-              <TabsTrigger value="design">Дизайн</TabsTrigger>
-              <TabsTrigger value="profile">Профиль</TabsTrigger>
-              <TabsTrigger value="share">Публикация</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="content" className="mt-6 space-y-4">
-              <div className="flex flex-wrap gap-2">
-                <Button variant="secondary" size="sm" onClick={() => addBlock("link")}>
-                  <LinkIcon className="mr-2 h-4 w-4" /> Ссылка
+      <main>
+        <section className="mx-auto max-w-7xl px-6 pb-20 pt-10 lg:pt-16">
+          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+            <div className="max-w-xl">
+              <h1 className="font-heading text-4xl font-medium leading-[1.1] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+                Одна ссылка — <br />
+                <span className="text-muted-foreground">все ваши проекты</span>
+              </h1>
+              <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+                Соберите минималистичную страницу с соцсетями, баннерами и ссылками за минуту.
+                Живой предпросмотр, красивые темы и мгновенная публикация.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <Button asChild size="lg" className="rounded-full px-7">
+                  <Link to="/build">
+                    Создать страницу <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
                 </Button>
-                <Button variant="default" size="sm" onClick={() => addBlock("banner")}>
-                  <LayoutPanelTop className="mr-2 h-4 w-4" /> Баннер
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => addBlock("header")}>
-                  <Heading1 className="mr-2 h-4 w-4" /> Заголовок
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => addBlock("social")}>
-                  <Share2 className="mr-2 h-4 w-4" /> Соцсети
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => addBlock("image")}>
-                  <ImageIcon className="mr-2 h-4 w-4" /> Картинка
-                </Button>
+                <span className="text-sm text-muted-foreground">Бесплатно, без регистрации</span>
               </div>
-
-              <div className="space-y-3">
-                {profile.blocks.map((b, i) => (
-                  <BlockEditor
-                    key={b.id}
-                    block={b}
-                    onChange={updateBlock}
-                    onDelete={() => removeBlock(b.id)}
-                    onMove={(d) => moveBlock(b.id, d)}
-                    canUp={i > 0}
-                    canDown={i < profile.blocks.length - 1}
-                  />
+              <ul className="mt-10 space-y-3 text-sm text-muted-foreground">
+                {[
+                  "Редактор с живым превью",
+                  "Готовые темы оформления",
+                  "Публикация через одну ссылку",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-foreground" />
+                    {item}
+                  </li>
                 ))}
-                {profile.blocks.length === 0 && (
-                  <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                    Добавьте первый блок кнопкой выше
+              </ul>
+            </div>
+
+            <div className="relative flex justify-center lg:justify-end">
+              <div className="relative">
+                <div className="absolute -inset-4 rounded-full bg-gradient-to-tr from-muted/60 via-transparent to-muted/40 blur-2xl" />
+                <LinkPreview profile={demoProfile} framed />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-t border-border bg-muted/30">
+          <div className="mx-auto max-w-7xl px-6 py-20">
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {features.map(({ icon: Icon, title, description }) => (
+                <div
+                  key={title}
+                  className="rounded-2xl border border-border bg-background p-6 transition-shadow hover:shadow-sm"
+                >
+                  <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                    <Icon className="h-5 w-5 text-foreground" />
                   </div>
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="design" className="mt-6">
-              <Label className="mb-3 block">Тема оформления</Label>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {(Object.keys(THEMES) as ThemeName[]).map((name) => {
-                  const t = THEMES[name];
-                  const active = profile.theme === name;
-                  return (
-                    <button
-                      key={name}
-                      onClick={() => update({ theme: name })}
-                      className={`overflow-hidden rounded-xl border-2 text-left transition ${
-                        active ? "border-primary" : "border-transparent"
-                      }`}
-                    >
-                      <div className={`${t.bg} p-4`}>
-                        <div className="mb-2 h-2 w-8 rounded bg-white/50" />
-                        <div className={`h-6 rounded ${t.card}`} />
-                        <div className={`mt-2 h-6 rounded ${t.card}`} />
-                      </div>
-                      <div className="bg-card px-3 py-2 text-sm font-medium">{t.label}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="profile" className="mt-6 space-y-4">
-              <div>
-                <Label>Никнейм (@slug)</Label>
-                <Input
-                  value={profile.slug}
-                  onChange={(e) =>
-                    update({ slug: e.target.value.replace(/[^a-zA-Z0-9_-]/g, "").toLowerCase() })
-                  }
-                />
-              </div>
-              <div>
-                <Label>Имя</Label>
-                <Input value={profile.name} onChange={(e) => update({ name: e.target.value })} />
-              </div>
-              <div>
-                <Label>О себе</Label>
-                <Textarea
-                  rows={4}
-                  value={profile.bio}
-                  onChange={(e) => update({ bio: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>URL аватара</Label>
-                <Input
-                  value={profile.avatar}
-                  onChange={(e) => update({ avatar: e.target.value })}
-                  placeholder="https://..."
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="share" className="mt-6 space-y-4">
-              <div>
-                <Label>Ссылка на вашу страницу</Label>
-                <div className="flex gap-2">
-                  <Input readOnly value={shareUrl} />
-                  <Button onClick={copyShare}>
-                    <Copy className="mr-2 h-4 w-4" /> Копировать
-                  </Button>
+                  <h3 className="font-heading text-lg font-medium">{title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Данные закодированы в самой ссылке — можно делиться без бэкенда.
-                </p>
-              </div>
-              <a href={shareUrl} target="_blank" rel="noreferrer" className="inline-block">
-                <Button variant="secondary">
-                  <Eye className="mr-2 h-4 w-4" /> Предпросмотр в новой вкладке
-                </Button>
-              </a>
-            </TabsContent>
-          </Tabs>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-border">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-8 sm:flex-row">
+          <span className="font-heading text-sm font-semibold">korner.</span>
+          <p className="text-xs text-muted-foreground">
+            Минималистичный конструктор мультиссылок
+          </p>
         </div>
-
-        <aside className="hidden lg:block">
-          <LinkPreview profile={profile} framed />
-        </aside>
-      </div>
-
-      <div className="fixed bottom-6 right-6 lg:hidden">
-        <Button size="lg" onClick={() => addBlock("link")}>
-          <Plus className="mr-2 h-4 w-4" /> Блок
-        </Button>
-      </div>
+      </footer>
     </div>
   );
 }
