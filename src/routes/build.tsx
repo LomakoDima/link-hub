@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import {
   Link as LinkIcon,
   Heading1,
   Share2,
+  Contact,
   Image as ImageIcon,
   Eye,
   Copy,
@@ -37,23 +37,10 @@ import { BlockEditor } from "@/components/BlockEditor";
 export const Route = createFileRoute("/build")({
   head: () => ({
     meta: [
-      { title: "Редактор — Korner" },
+      { title: "Linqo — the multi-link builder" },
       {
         name: "description",
-        content:
-          "Собери свою страницу со всеми ссылками за минуту. Красивые темы, соцсети, живой предпросмотр.",
-      },
-      { property: "og:title", content: "Редактор — Korner" },
-      {
-        property: "og:description",
-        content: "Собери свою страницу со всеми ссылками за минуту.",
-      },
-      { 
-        title: "Linqo — the multi-link builder" },
-      {
-        name: "description",
-        content:
-          "Build your all-links page in a minute. Beautiful themes, socials, live preview.",
+        content: "Build your all-links page in a minute. Beautiful themes, socials, live preview.",
       },
       { property: "og:title", content: "Linqo — the multi-link builder" },
       {
@@ -81,6 +68,7 @@ function BuilderPage() {
   }, [profile, ready]);
 
   const update = (patch: Partial<Profile>) => setProfile((p) => ({ ...p, ...patch }));
+
   const handleAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -104,26 +92,11 @@ function BuilderPage() {
       toast.error("Couldn't read that image");
     }
   };
+
   const addBlock = (type: LinkBlock["type"]) => {
     const nb: LinkBlock =
       type === "social"
         ? { id: uid(), type, socials: [{ kind: "instagram", url: "" }] }
-        : type === "header"
-          ? { id: uid(), type, title: "Новый заголовок" }
-          : type === "image"
-            ? { id: uid(), type, image: "", url: "" }
-            : type === "banner"
-              ? {
-                  id: uid(),
-                  type: "banner",
-                  title: "Новый баннер",
-                  subtitle: "",
-                  url: "https://",
-                  image: "",
-                  bannerStyle: "ember",
-                  tall: false,
-                }
-              : { id: uid(), type: "link", title: "Новая ссылка", url: "https://" };
         : type === "contact"
           ? { id: uid(), type, email: "", phone: "" }
           : type === "header"
@@ -158,14 +131,6 @@ function BuilderPage() {
       return { ...p, blocks: next };
     });
 
-  const shareUrl = useMemo(() => {
-    if (typeof window === "undefined") return "";
-    return `${window.location.origin}/p/${profile.slug}#${encodeProfile(profile)}`;
-  }, [profile]);
-
-  const copyShare = async () => {
-    await navigator.clipboard.writeText(shareUrl);
-    toast.success("Ссылка скопирована");
   // Relative path: resolvable during SSR and immediately after hydration, with
   // no dependency on `window` or client mount timing — the Open/Preview links
   // below must never risk pointing at an empty or stale href.
@@ -174,7 +139,6 @@ function BuilderPage() {
   }, [profile]);
 
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}${sharePath}` : sharePath;
-
   const copyShare = async () => {
     await navigator.clipboard.writeText(`${window.location.origin}${sharePath}`);
     toast.success("Link copied");
@@ -184,24 +148,6 @@ function BuilderPage() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-                <Rocket className="h-4 w-4" />
-              </div>
-              <span className="text-lg font-semibold tracking-tight">korner.</span>
-            </Link>
-            <span className="hidden text-sm text-muted-foreground sm:inline">
-              конструктор мультиссылок
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={copyShare}>
-              <Copy className="mr-2 h-4 w-4" /> Копировать
-            </Button>
-            <a href={shareUrl} target="_blank" rel="noreferrer">
-              <Button size="sm">
-                <Eye className="mr-2 h-4 w-4" /> Открыть
           <Link to="/" className="flex items-center gap-2">
             <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
               <Rocket className="h-4 w-4" />
@@ -228,10 +174,6 @@ function BuilderPage() {
         <div>
           <Tabs defaultValue="content" className="w-full">
             <TabsList>
-              <TabsTrigger value="content">Контент</TabsTrigger>
-              <TabsTrigger value="design">Дизайн</TabsTrigger>
-              <TabsTrigger value="profile">Профиль</TabsTrigger>
-              <TabsTrigger value="share">Публикация</TabsTrigger>
               <TabsTrigger value="content">Content</TabsTrigger>
               <TabsTrigger value="design">Design</TabsTrigger>
               <TabsTrigger value="profile">Profile</TabsTrigger>
@@ -241,19 +183,6 @@ function BuilderPage() {
             <TabsContent value="content" className="mt-6 space-y-4">
               <div className="flex flex-wrap gap-2">
                 <Button variant="secondary" size="sm" onClick={() => addBlock("link")}>
-                  <LinkIcon className="mr-2 h-4 w-4" /> Ссылка
-                </Button>
-                <Button variant="default" size="sm" onClick={() => addBlock("banner")}>
-                  <LayoutPanelTop className="mr-2 h-4 w-4" /> Баннер
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => addBlock("header")}>
-                  <Heading1 className="mr-2 h-4 w-4" /> Заголовок
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => addBlock("social")}>
-                  <Share2 className="mr-2 h-4 w-4" /> Соцсети
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => addBlock("image")}>
-                  <ImageIcon className="mr-2 h-4 w-4" /> Картинка
                   <LinkIcon className="mr-2 h-4 w-4" /> Link
                 </Button>
                 <Button variant="default" size="sm" onClick={() => addBlock("banner")}>
@@ -287,35 +216,12 @@ function BuilderPage() {
                 ))}
                 {profile.blocks.length === 0 && (
                   <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                    Добавьте первый блок кнопкой выше
                     Add your first block using the button above
                   </div>
                 )}
               </div>
             </TabsContent>
-            <TabsContent value="design" className="mt-6">
-              <Label className="mb-3 block">Тема оформления</Label>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {(Object.keys(THEMES) as ThemeName[]).map((name) => {
-                  const t = THEMES[name];
-                  const active = profile.theme === name;
-                  return (
-                    <button
-                      key={name}
-                      onClick={() => update({ theme: name })}
-                      className={`overflow-hidden rounded-xl border-2 text-left transition ${
-                        active ? "border-primary" : "border-transparent"
-                      }`}
-                    >
-                      <div className={`${t.bg} p-4`}>
-                        <div className="mb-2 h-2 w-8 rounded bg-white/50" />
-                        <div className={`h-6 rounded ${t.card}`} />
-                        <div className={`mt-2 h-6 rounded ${t.card}`} />
-                      </div>
-                      <div className="bg-card px-3 py-2 text-sm font-medium">{t.label}</div>
-                    </button>
-                  );
-                })}
+
             <TabsContent value="design" className="mt-6 space-y-6">
               <div>
                 <Label className="mb-3 block">Solid colors</Label>
@@ -351,9 +257,7 @@ function BuilderPage() {
 
             <TabsContent value="profile" className="mt-6 space-y-4">
               <div>
-                <Label>Никнейм (@slug)</Label>
                 <Label>Username (@slug)</Label>
-
                 <Input
                   value={profile.slug}
                   onChange={(e) =>
@@ -362,11 +266,6 @@ function BuilderPage() {
                 />
               </div>
               <div>
-                <Label>Имя</Label>
-                <Input value={profile.name} onChange={(e) => update({ name: e.target.value })} />
-              </div>
-              <div>
-                <Label>О себе</Label>
                 <Label>Name</Label>
                 <Input value={profile.name} onChange={(e) => update({ name: e.target.value })} />
               </div>
@@ -379,12 +278,6 @@ function BuilderPage() {
                 />
               </div>
               <div>
-                <Label>URL аватара</Label>
-                <Input
-                  value={profile.avatar}
-                  onChange={(e) => update({ avatar: e.target.value })}
-                  placeholder="https://..."
-                />
                 <Label>Cover image</Label>
                 <div className="flex items-center gap-3">
                   <div className="h-12 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
@@ -453,22 +346,9 @@ function BuilderPage() {
                 </div>
               </div>
             </TabsContent>
+
             <TabsContent value="share" className="mt-6 space-y-4">
               <div>
-                <Label>Ссылка на вашу страницу</Label>
-                <div className="flex gap-2">
-                  <Input readOnly value={shareUrl} />
-                  <Button onClick={copyShare}>
-                    <Copy className="mr-2 h-4 w-4" /> Копировать
-                  </Button>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Данные закодированы в самой ссылке — можно делиться без бэкенда.
-                </p>
-              </div>
-              <a href={shareUrl} target="_blank" rel="noreferrer" className="inline-block">
-                <Button variant="secondary">
-                  <Eye className="mr-2 h-4 w-4" /> Предпросмотр в новой вкладке
                 <Label>Link to your page</Label>
                 <div className="flex gap-2">
                   <Input readOnly value={shareUrl} />
@@ -483,7 +363,6 @@ function BuilderPage() {
               <a href={sharePath} target="_blank" rel="noreferrer" className="inline-block">
                 <Button variant="secondary">
                   <Eye className="mr-2 h-4 w-4" /> Preview in new tab
-
                 </Button>
               </a>
             </TabsContent>
@@ -497,17 +376,12 @@ function BuilderPage() {
 
       <div className="fixed bottom-6 right-6 lg:hidden">
         <Button size="lg" onClick={() => addBlock("link")}>
-
-          <Plus className="mr-2 h-4 w-4" /> Блок
-
           <Plus className="mr-2 h-4 w-4" /> Block
-
         </Button>
       </div>
     </div>
   );
 }
-
 
 function ThemeSwatch({
   name,
@@ -535,4 +409,3 @@ function ThemeSwatch({
     </button>
   );
 }
-
