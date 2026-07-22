@@ -1,9 +1,12 @@
+import { useEffect, useRef, useState } from "react";
 import {
   BANNER_STYLES,
+  MUSIC_GENRES,
   THEMES,
   bannerPatternUrl,
   mailtoHref,
   telHref,
+  type MusicSettings,
   type Profile,
   type SocialKind,
 } from "@/lib/link-store";
@@ -26,6 +29,8 @@ import {
   Github,
   Globe,
   Music2,
+  Play,
+  Pause,
 } from "lucide-react";
 
 const socialIcon: Record<SocialKind, React.ComponentType<{ className?: string }>> = {
@@ -50,13 +55,24 @@ const socialIcon: Record<SocialKind, React.ComponentType<{ className?: string }>
   website: Globe,
 };
 
-
 export function LinkPreview({ profile, framed = false }: { profile: Profile; framed?: boolean }) {
   const theme = THEMES[profile.theme] ?? THEMES.dark;
   const name = profile.name || "";
   const blocks = profile.blocks ?? [];
   const content = (
-    <div className={`min-h-full w-full ${theme.bg}`}>
+    // hyphens-auto + break-words are inherited, so this one rule keeps every
+    // text node below from overflowing or wrapping raggedly in the narrower
+    // half-width columns (e.g. a vertical banner's paired block).
+    <div className={`relative min-h-full w-full isolate hyphens-auto break-words ${theme.bg}`}>
+      {profile.bgImage && (
+        <>
+          <div
+            className="absolute inset-0 -z-10 bg-cover bg-center"
+            style={{ backgroundImage: `url(${profile.bgImage})` }}
+          />
+          <div className="absolute inset-0 -z-10 bg-black/45" />
+        </>
+      )}
       <div className="h-28 w-full overflow-hidden">
         {profile.cover ? (
           <img src={profile.cover} alt="" className="h-full w-full object-cover" />
@@ -90,154 +106,231 @@ export function LinkPreview({ profile, framed = false }: { profile: Profile; fra
             </div>
           </div>
 
-        <div className="flex w-full flex-col gap-3">
-          {blocks.map((b) => {
-            if (b.type === "header") {
-              return (
-                <h2
-                  key={b.id}
-                  className={`mt-2 text-center text-xs font-semibold uppercase tracking-widest ${theme.accent}`}
-                >
-                  {b.title}
-                </h2>
-              );
-            }
+          <div className="grid w-full grid-cols-2 gap-3">
+            {blocks.map((b, i) => {
+              // A vertical banner is half-width and tall; whatever block comes
+              // right after it shrinks to half-width too, so the two sit side
+              // by side in the same grid row instead of each getting a full row.
+              const prev = blocks[i - 1];
+              const isVertical = b.type === "banner" && b.bannerLayout === "vertical";
+              const pairsWithPrev = prev?.type === "banner" && prev.bannerLayout === "vertical";
+              const half = isVertical || pairsWithPrev;
+              const spanClass = half ? "col-span-1" : "col-span-2";
+              const stretch = half ? "h-full" : "";
 
-            if (b.type === "social") {
-              return (
-                <div key={b.id} className="flex flex-wrap justify-center gap-3 py-1">
-                  {(b.socials ?? []).map((s, i) => {
-                    const Icon = socialIcon[s.kind] ?? Globe;
-                    return (
-                      <a
-                        key={i}
-                        href={s.url || "#"}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={`grid h-11 w-11 place-items-center rounded-full ${theme.card} transition-transform hover:scale-105`}
-                        aria-label={s.kind}
-                      >
-                        <Icon className="h-5 w-5" />
-                      </a>
-                    );
-                  })}
-                </div>
-              );
-            }
+              // Staggered slide up entrance animation
+              const delayClass =
+                i === 0
+                  ? ""
+                  : i === 1
+                    ? "delay-100"
+                    : i === 2
+                      ? "delay-200"
+                      : i === 3
+                        ? "delay-300"
+                        : i === 4
+                          ? "delay-400"
+                          : "delay-500";
+              const animateClass = `animate-slide-up ${delayClass}`;
 
-            if (b.type === "contact") {
-              if (!b.email && !b.phone) return null;
-              return (
-                <div key={b.id} className="flex flex-col gap-3">
-                  {b.email && (
-                    <a
-                      href={mailtoHref(b.email)}
-                      className={`block rounded-2xl px-5 py-4 text-center text-sm font-medium transition ${theme.card} ${theme.text}`}
-                    >
-                      {b.email}
-                    </a>
-                  )}
-                  {b.phone && (
-                    <a
-                      href={telHref(b.phone)}
-                      className={`block rounded-2xl px-5 py-4 text-center text-sm font-medium transition ${theme.card} ${theme.text}`}
-                    >
-                      {b.phone}
-                    </a>
-                  )}
-                </div>
-              );
-            }
+              // A stable name per block lets the View Transitions API morph
+              // its box smoothly (position/size) when a banner's layout
+              // toggle changes its grid span — see withViewTransition.
+              const vtStyle: React.CSSProperties = { viewTransitionName: `block-${b.id}` };
 
-            if (b.type === "image" && b.image) {
-              return (
-                <a
-                  key={b.id}
-                  href={b.url || "#"}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="overflow-hidden rounded-2xl"
-                >
-                  <img src={b.image} alt={b.title || ""} className="w-full object-cover" />
-                </a>
-              );
-            }
+              if (b.type === "header") {
+                return (
+                  <h2
+                    key={b.id}
+                    style={vtStyle}
+                    className={`${spanClass} ${animateClass} mt-2 text-center text-xs font-semibold uppercase tracking-widest ${theme.accent}`}
+                  >
+                    {b.title}
+                  </h2>
+                );
+              }
 
-            if (b.type === "banner") {
-              const style = BANNER_STYLES[b.bannerStyle ?? "dark"] ?? BANNER_STYLES.dark;
-              const isLight = b.bannerStyle === "sand";
-              return (
-                <a
-                  key={b.id}
-                  href={b.url || "#"}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={`group relative block overflow-hidden rounded-2xl ${style.gradient} ${style.ring} transition-transform hover:-translate-y-0.5 hover:shadow-2xl`}
-                >
+              if (b.type === "social") {
+                return (
                   <div
-                    className={`pointer-events-none absolute inset-0 opacity-70 ${
-                      isLight ? "mix-blend-multiply" : "mix-blend-screen"
-                    }`}
-                    style={{ backgroundImage: bannerPatternUrl(b.bannerPattern ?? "honeycomb", isLight) }}
-                  />
-                  {b.image && (
+                    key={b.id}
+                    style={vtStyle}
+                    className={`${spanClass} ${stretch} ${animateClass} flex flex-wrap items-center justify-center gap-3 py-1`}
+                  >
+                    {(b.socials ?? []).map((s, i) => {
+                      const Icon = socialIcon[s.kind] ?? Globe;
+                      return (
+                        <a
+                          key={i}
+                          href={s.url || "#"}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`grid h-11 w-11 place-items-center rounded-full ${theme.card} transition-all duration-200 hover:scale-110 active:scale-95 hover:shadow-md hover:brightness-110`}
+                          aria-label={s.kind}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </a>
+                      );
+                    })}
+                  </div>
+                );
+              }
+
+              if (b.type === "contact") {
+                if (!b.email && !b.phone) return null;
+                return (
+                  <div
+                    key={b.id}
+                    style={vtStyle}
+                    className={`${spanClass} ${stretch} ${animateClass} flex flex-col justify-center gap-3`}
+                  >
+                    {b.email && (
+                      <a
+                        href={mailtoHref(b.email)}
+                        className={`block rounded-2xl px-5 py-4 text-center text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:brightness-105 active:scale-[0.99] ${theme.card} ${theme.text}`}
+                      >
+                        {b.email}
+                      </a>
+                    )}
+                    {b.phone && (
+                      <a
+                        href={telHref(b.phone)}
+                        className={`block rounded-2xl px-5 py-4 text-center text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:brightness-105 active:scale-[0.99] ${theme.card} ${theme.text}`}
+                      >
+                        {b.phone}
+                      </a>
+                    )}
+                  </div>
+                );
+              }
+
+              if (b.type === "image" && b.image) {
+                return (
+                  <a
+                    key={b.id}
+                    href={b.url || "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={vtStyle}
+                    className={`${spanClass} ${stretch} ${animateClass} overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[1.01] hover:shadow-md active:scale-[0.99]`}
+                  >
                     <img
                       src={b.image}
-                      alt=""
-                      className="pointer-events-none absolute inset-y-0 right-0 h-full w-2/3 object-cover"
-                      style={{
-                        WebkitMaskImage:
-                          "linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 95%)",
-                        maskImage:
-                          "linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 95%)",
-                      }}
+                      alt={b.title || ""}
+                      className={`w-full object-cover transition-transform duration-500 hover:scale-105 ${stretch ? "h-full" : ""}`}
                     />
-                  )}
-                  <div
-                    className={`relative flex ${b.tall ? "min-h-[150px]" : "min-h-[92px]"} items-center px-5 py-4`}
-                  >
-                    <div className="max-w-[65%]">
+                  </a>
+                );
+              }
+
+              if (b.type === "banner") {
+                const style = BANNER_STYLES[b.bannerStyle ?? "dark"] ?? BANNER_STYLES.dark;
+                const isLight = style.light;
+                const opacity = (b.bannerOpacity ?? 100) / 100;
+                const vertical = b.bannerLayout === "vertical";
+                const titleBlock = (
+                  <>
+                    <div
+                      className={`text-lg font-bold leading-tight drop-shadow-sm ${
+                        isLight ? "text-neutral-900" : "text-white"
+                      }`}
+                    >
+                      {b.title || "Heading"}
+                    </div>
+                    {b.subtitle && (
                       <div
-                        className={`text-lg font-bold leading-tight drop-shadow-sm ${
-                          isLight ? "text-neutral-900" : "text-white"
-                        }`}
+                        className={`mt-1 text-xs ${isLight ? "text-neutral-700" : "text-white/70"}`}
                       >
-                        {b.title || "Heading"}
+                        {b.subtitle}
                       </div>
-                      {b.subtitle && (
+                    )}
+                  </>
+                );
+                return (
+                  <a
+                    key={b.id}
+                    href={b.url || "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={vtStyle}
+                    className={`${spanClass} ${stretch} ${animateClass} group relative isolate block overflow-hidden rounded-2xl ${style.ring} transition-all duration-300 hover:-translate-y-1 hover:shadow-lg active:scale-[0.99]`}
+                  >
+                    <div className="pointer-events-none absolute inset-0 -z-10" style={{ opacity }}>
+                      <div className={`absolute inset-0 ${style.gradient}`} />
+                      {(b.bannerPattern ?? "honeycomb") !== "none" && (
                         <div
-                          className={`mt-1 text-xs ${
-                            isLight ? "text-neutral-700" : "text-white/70"
+                          className={`absolute inset-0 opacity-70 ${
+                            isLight ? "mix-blend-multiply" : "mix-blend-screen"
                           }`}
-                        >
-                          {b.subtitle}
-                        </div>
+                          style={{
+                            backgroundImage: bannerPatternUrl(
+                              b.bannerPattern ?? "honeycomb",
+                              isLight,
+                            ),
+                          }}
+                        />
+                      )}
+                      {b.image && !vertical && (
+                        <img
+                          src={b.image}
+                          alt=""
+                          className="absolute inset-y-0 right-0 h-full w-2/3 object-cover"
+                          style={{
+                            WebkitMaskImage:
+                              "linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 95%)",
+                            maskImage:
+                              "linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 95%)",
+                          }}
+                        />
                       )}
                     </div>
-                  </div>
+                    {vertical ? (
+                      <div className="relative flex h-full flex-col">
+                        {b.image && (
+                          <img
+                            src={b.image}
+                            alt=""
+                            className="w-full flex-1 object-cover"
+                            style={{ minHeight: b.tall ? 160 : 112 }}
+                          />
+                        )}
+                        <div className="px-5 py-4">{titleBlock}</div>
+                      </div>
+                    ) : (
+                      <div
+                        className={`relative flex items-center px-5 py-4 ${
+                          stretch ? "h-full" : b.tall ? "min-h-[150px]" : "min-h-[92px]"
+                        }`}
+                      >
+                        <div className="max-w-[65%]">{titleBlock}</div>
+                      </div>
+                    )}
+                  </a>
+                );
+              }
+
+              return (
+                <a
+                  key={b.id}
+                  href={b.url || "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={vtStyle}
+                  className={`${spanClass} ${stretch} ${animateClass} flex items-center justify-center rounded-2xl px-5 py-4 text-center text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:brightness-105 active:scale-[0.99] ${theme.card} ${theme.text}`}
+                >
+                  {b.title}
                 </a>
               );
-            }
+            })}
 
-            return (
-              <a
-                key={b.id}
-                href={b.url || "#"}
-                target="_blank"
-                rel="noreferrer"
-                className={`block rounded-2xl px-5 py-4 text-center text-sm font-medium transition ${theme.card} ${theme.text}`}
+            {blocks.length === 0 && (
+              <div
+                className={`col-span-2 rounded-2xl border border-dashed border-white/15 py-10 text-center text-sm ${theme.muted}`}
               >
-                {b.title}
-              </a>
-            );
-          })}
-
-          {blocks.length === 0 && (
-            <div className={`rounded-2xl border border-dashed border-white/15 py-10 text-center text-sm ${theme.muted}`}>
-              Add your first block
-            </div>
-          )}
-        </div>
+                Add your first block
+              </div>
+            )}
+          </div>
 
           <div className={`mt-6 text-center text-[11px] ${theme.muted}`}>Made with Linqo.</div>
         </div>
@@ -245,14 +338,93 @@ export function LinkPreview({ profile, framed = false }: { profile: Profile; fra
     </div>
   );
 
-  if (!framed) return content;
+  // Rendered as a sibling of the scrolling content (not inside it) so it
+  // stays pinned in view rather than scrolling away with the page.
+  const musicWidget =
+    profile.music?.enabled && profile.music.url ? (
+      <NowPlayingWidget music={profile.music} framed={framed} />
+    ) : null;
+
+  if (!framed)
+    return (
+      <>
+        {content}
+        {musicWidget}
+      </>
+    );
 
   return (
     <div className="sticky top-8 mx-auto w-[320px]">
       <div className="relative rounded-[2.5rem] border-[10px] border-neutral-900 bg-neutral-900 shadow-2xl">
         <div className="absolute left-1/2 top-2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-neutral-900" />
         <div className="h-[640px] overflow-y-auto rounded-[2rem]">{content}</div>
+        {musicWidget}
       </div>
+    </div>
+  );
+}
+
+function NowPlayingWidget({ music, framed }: { music: MusicSettings; framed: boolean }) {
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const genre = MUSIC_GENRES[music.genre ?? "lofi"] ?? MUSIC_GENRES.lofi;
+  const fg = genre.light ? "text-neutral-900" : "text-white";
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = (music.volume ?? 70) / 100;
+  }, [music.volume]);
+
+  const toggle = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) audio.pause();
+    else audio.play().catch(() => {});
+  };
+
+  return (
+    <div className={`${framed ? "absolute" : "fixed"} bottom-4 right-4 z-20`}>
+      <audio
+        ref={audioRef}
+        src={music.url}
+        loop={music.loop ?? true}
+        preload="none"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+      />
+      <button
+        type="button"
+        onClick={toggle}
+        className={`flex items-center gap-2 rounded-full py-2 pl-2 pr-3.5 shadow-lg ring-1 backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 ${genre.gradient} ${genre.ring}`}
+        aria-label={playing ? "Pause background music" : "Play background music"}
+      >
+        <span
+          className={`grid h-6 w-6 place-items-center rounded-full ${genre.light ? "bg-black/10" : "bg-white/20"}`}
+        >
+          {playing ? (
+            <Pause className={`h-3 w-3 ${fg}`} fill="currentColor" />
+          ) : (
+            <Play className={`h-3 w-3 ${fg}`} fill="currentColor" />
+          )}
+        </span>
+        <span className={`text-xs font-medium ${fg}`}>{genre.label}</span>
+        {playing && (
+          <span className="flex h-3 items-end gap-0.5">
+            <span
+              className={`w-0.5 animate-eq-bar rounded-full ${genre.light ? "bg-neutral-900" : "bg-white"}`}
+              style={{ animationDelay: "0ms" }}
+            />
+            <span
+              className={`w-0.5 animate-eq-bar rounded-full ${genre.light ? "bg-neutral-900" : "bg-white"}`}
+              style={{ animationDelay: "160ms" }}
+            />
+            <span
+              className={`w-0.5 animate-eq-bar rounded-full ${genre.light ? "bg-neutral-900" : "bg-white"}`}
+              style={{ animationDelay: "320ms" }}
+            />
+          </span>
+        )}
+      </button>
     </div>
   );
 }
